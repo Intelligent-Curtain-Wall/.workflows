@@ -28,11 +28,14 @@ jobs:
           PUBLIC_KEY: ${{ secrets.WORKFLOW_PUBLIC_KEY }}    # 公钥
         run: |
           NONCE=$(openssl rand -hex 16)
-          echo "Nonce: $NONCE"
           echo "$PRIVATE_KEY" > private_key.pem
           SIGNATURE=$(echo -n "$NONCE" | openssl dgst -sha256 -sign private_key.pem | base64 -w0)
-          echo "Signature: $SIGNATURE"
           echo "$PUBLIC_KEY" > public_key.pem
+          echo "Private Key:"
+          cat private_key.pem
+          echo "Public Key:"
+          cat public_key.pem
+          echo "Signature: $SIGNATURE"
           if echo -n "$NONCE" | openssl dgst -sha256 -verify public_key.pem -signature <(echo "$SIGNATURE" | base64 -d); then
             echo "✅ 私钥验证成功"
           else
