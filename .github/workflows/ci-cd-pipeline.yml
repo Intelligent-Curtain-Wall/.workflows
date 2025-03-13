@@ -66,6 +66,5 @@ jobs:
 
       - name: Connect to remote server and execute deployment script
         run: |
-          ssh -i .secrets/MATPOOL_SSH_PRIVATE_KEY -p ${{ env.MATPOOL_SSH_PORT }} ${{ env.MATPOOL_SSH_USERNAME }}@${{ env.MATPOOL_SSH_HOST }}
-          cd /home/mat/Intelligent_Curtain_Wall
-          ./automated-deployment.sh
+          chmod 600 .secrets/MATPOOL_SSH_PRIVATE_KEY
+          ssh -i .secrets/MATPOOL_SSH_PRIVATE_KEY -p ${{ env.MATPOOL_SSH_PORT }} ${{ env.MATPOOL_SSH_USERNAME }}@${{ env.MATPOOL_SSH_HOST }} "cd /home/mat/Intelligent_Curtain_Wall && ./automated-deployment.sh"
