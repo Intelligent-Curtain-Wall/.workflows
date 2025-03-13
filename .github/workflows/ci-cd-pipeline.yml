@@ -24,13 +24,11 @@ jobs:
 
       - name: Verify private key
         run: |
-          printf "%s" "${{ secrets.WORKFLOW_PRIVATE_KEY }}" > private_key
+          echo "${{ secrets.WORKFLOW_PRIVATE_KEY }}" > private_key
           chmod 600 private_key
           ssh-keygen -y -f private_key > public_key
-          cat public_key
-          curl -s https://raw.githubusercontent.com/Intelligent-Curtain-Wall/.workflows/main/id_rsa.pub
-          if ! diff -b public_key <(curl -s https://raw.githubusercontent.com/Intelligent-Curtain-Wall/.workflows/main/id_rsa.pub); then
-            echo "ERROR: Key mismatch!"
+          if ! diff -q public_key <(curl -s https://raw.githubusercontent.com/Intelligent-Curtain-Wall/.workflows/main/id_rsa.pub); then
+            echo "Invalid private key"
             exit 1
           fi
 
