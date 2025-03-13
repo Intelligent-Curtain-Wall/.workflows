@@ -27,6 +27,8 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.WORKFLOW_PRIVATE_KEY }}" > ~/.ssh/workflow_id_rsa
           chmod 600 ~/.ssh/workflow_id_rsa
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/workflow_id_rsa
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
       - name: Clone secrets repository
