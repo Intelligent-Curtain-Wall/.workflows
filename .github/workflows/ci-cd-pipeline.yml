@@ -25,8 +25,8 @@ jobs:
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.WORKFLOW_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.WORKFLOW_PRIVATE_KEY }}" > ~/.ssh/workflow_id_rsa
+          chmod 600 ~/.ssh/workflow_id_rsa
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
       - name: Clone secrets repository
@@ -50,8 +50,8 @@ jobs:
           echo "SSH_HOST=$SSH_HOST" >> $GITHUB_ENV
           echo "SSH_USERNAME=$SSH_USERNAME" >> $GITHUB_ENV
           mkdir -p ~/.ssh
-          cat .secrets/SSH_PRIVATE_KEY > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          cat .secrets/SSH_PRIVATE_KEY > ~/.ssh/ssh_id_rsa
+          chmod 600 ~/.ssh/ssh_id_rsa
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -66,3 +66,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: docker.io/minmuslin/intelligent-curtain-wall:${{ inputs.image-tag }}
+
+      - name: Connect to remote server and execute deployment script
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/ssh_id_rsa -p ${{ env.SSH_PORT }} ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }} \
+          "cd /home/mat/Intelligent_Curtain_Wall && ./automated-deployment.sh"
