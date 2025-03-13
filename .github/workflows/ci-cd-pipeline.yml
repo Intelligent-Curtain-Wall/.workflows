@@ -41,17 +41,18 @@ jobs:
         run: |
           export DOCKER_USERNAME=$(cat .secrets/DOCKER_USERNAME)
           export DOCKER_PASSWORD=$(cat .secrets/DOCKER_PASSWORD)
-          export SSH_PORT=$(cat .secrets/SSH_PORT)
-          export SSH_HOST=$(cat .secrets/SSH_HOST)
-          export SSH_USERNAME=$(cat .secrets/SSH_USERNAME)
+          export MATPOOL_SSH_PORT=$(cat .secrets/MATPOOL_SSH_PORT)
+          export MATPOOL_SSH_HOST=$(cat .secrets/MATPOOL_SSH_HOST)
+          export MATPOOL_SSH_USERNAME=$(cat .secrets/MATPOOL_SSH_USERNAME)
           echo "DOCKER_USERNAME=$DOCKER_USERNAME" >> $GITHUB_ENV
           echo "DOCKER_PASSWORD=$DOCKER_PASSWORD" >> $GITHUB_ENV
-          echo "SSH_PORT=$SSH_PORT" >> $GITHUB_ENV
-          echo "SSH_HOST=$SSH_HOST" >> $GITHUB_ENV
-          echo "SSH_USERNAME=$SSH_USERNAME" >> $GITHUB_ENV
+          echo "MATPOOL_SSH_PORT=$MATPOOL_SSH_PORT" >> $GITHUB_ENV
+          echo "MATPOOL_SSH_HOST=$MATPOOL_SSH_HOST" >> $GITHUB_ENV
+          echo "MATPOOL_SSH_USERNAME=$MATPOOL_SSH_USERNAME" >> $GITHUB_ENV
           mkdir -p ~/.ssh
-          cat .secrets/SSH_PRIVATE_KEY > ~/.ssh/matpool_id_rsa
+          cat .secrets/MATPOOL_SSH_PRIVATE_KEY > ~/.ssh/matpool_id_rsa
           chmod 600 ~/.ssh/matpool_id_rsa
+          ssh-keygen -p -m PEM -N "" -f ~/.ssh/matpool_id_rsa
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -69,5 +70,5 @@ jobs:
 
       - name: Connect to remote server and execute deployment script
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/matpool_id_rsa -p ${{ env.SSH_PORT }} ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }} \
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/matpool_id_rsa -p ${{ env.MATPOOL_SSH_PORT }} ${{ env.MATPOOL_SSH_USERNAME }}@${{ env.MATPOOL_SSH_HOST }} \
           "cd /home/mat/Intelligent_Curtain_Wall && ./automated-deployment.sh"
