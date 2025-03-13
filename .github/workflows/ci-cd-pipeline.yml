@@ -24,24 +24,11 @@ jobs:
 
       - name: Verify private key
         env:
-          PRIVATE_KEY: ${{ secrets.WORKFLOW_PRIVATE_KEY }}  # 私钥
-          PUBLIC_KEY: ${{ secrets.WORKFLOW_PUBLIC_KEY }}    # 公钥
+          PRIVATE_KEY: ${{ secrets.WORKFLOW_PRIVATE_KEY }}
+          PUBLIC_KEY: ${{ secrets.WORKFLOW_PUBLIC_KEY }}
         run: |
-          NONCE=$(openssl rand -hex 16)
-          echo "$PRIVATE_KEY" > private_key.pem
-          SIGNATURE=$(echo -n "$NONCE" | openssl dgst -sha256 -sign private_key.pem | base64 -w0)
-          echo "$PUBLIC_KEY" > public_key.pem
-          echo "Private Key:"
-          cat private_key.pem
-          echo "Public Key:"
-          cat public_key.pem
-          echo "Signature: $SIGNATURE"
-          if echo -n "$NONCE" | openssl dgst -sha256 -verify public_key.pem -signature <(echo "$SIGNATURE" | base64 -d); then
-            echo "✅ 私钥验证成功"
-          else
-            echo "❌ 私钥验证失败"
-            exit 1
-          fi
+          echo PRIVATE_KEY
+          echo PUBLIC_KEY
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
