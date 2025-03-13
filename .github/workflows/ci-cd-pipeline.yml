@@ -27,8 +27,8 @@ jobs:
           PRIVATE_KEY: ${{ secrets.WORKFLOW_PRIVATE_KEY }}
           PUBLIC_KEY: ${{ secrets.WORKFLOW_PUBLIC_KEY }}
         run: |
-          echo PRIVATE_KEY
-          echo PUBLIC_KEY
+          echo "$PRIVATE_KEY"
+          echo "$PUBLIC_KEY"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
