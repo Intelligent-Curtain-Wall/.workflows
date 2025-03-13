@@ -32,18 +32,26 @@ jobs:
       - name: Clone secrets repository
         run: |
           git clone git@github.com:Intelligent-Curtain-Wall/.secrets.git
+          if [ ! -d ".secrets" ]; then
+            echo "Error: .secrets directory not found!"
+            exit 1
+          fi
+
+      - name: Read secrets and set environment variables
+        run: |
           export DOCKER_USERNAME=$(cat .secrets/DOCKER_USERNAME)
           export DOCKER_PASSWORD=$(cat .secrets/DOCKER_PASSWORD)
           export SSH_PORT=$(cat .secrets/SSH_PORT)
           export SSH_HOST=$(cat .secrets/SSH_HOST)
           export SSH_USERNAME=$(cat .secrets/SSH_USERNAME)
-          export SSH_PRIVATE_KEY=$(cat .secrets/SSH_PRIVATE_KEY)
           echo "DOCKER_USERNAME=$DOCKER_USERNAME" >> $GITHUB_ENV
           echo "DOCKER_PASSWORD=$DOCKER_PASSWORD" >> $GITHUB_ENV
           echo "SSH_PORT=$SSH_PORT" >> $GITHUB_ENV
           echo "SSH_HOST=$SSH_HOST" >> $GITHUB_ENV
           echo "SSH_USERNAME=$SSH_USERNAME" >> $GITHUB_ENV
-          echo "SSH_PRIVATE_KEY=$SSH_PRIVATE_KEY" >> $GITHUB_ENV
+          mkdir -p ~/.ssh
+          cat .secrets/SSH_PRIVATE_KEY > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
