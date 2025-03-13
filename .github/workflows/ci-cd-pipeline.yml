@@ -27,7 +27,7 @@ jobs:
           echo "${{ secrets.WORKFLOW_PRIVATE_KEY }}" > private_key
           chmod 600 private_key
           ssh-keygen -y -f private_key > public_key
-          if ! diff -q public_key <(curl -s https://raw.githubusercontent.com/Intelligent-Curtain-Wall/.workflows/main/id_rsa.pub); then
+          if ! diff -q public_key <(curl -s https://raw.githubusercontent.com/Intelligent-Curtain-Wall/.workflows/main/id_rsa.pub?raw=true); then
             echo "Invalid private key"
             exit 1
           fi
