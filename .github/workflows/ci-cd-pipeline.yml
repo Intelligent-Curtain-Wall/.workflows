@@ -52,7 +52,6 @@ jobs:
           mkdir -p ~/.ssh
           cat .secrets/MATPOOL_SSH_PRIVATE_KEY > ~/.ssh/matpool_id_rsa
           chmod 600 ~/.ssh/matpool_id_rsa
-          ssh-keygen -p -m PEM -N "" -f ~/.ssh/matpool_id_rsa
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -70,5 +69,4 @@ jobs:
 
       - name: Connect to remote server and execute deployment script
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/matpool_id_rsa -p ${{ env.MATPOOL_SSH_PORT }} ${{ env.MATPOOL_SSH_USERNAME }}@${{ env.MATPOOL_SSH_HOST }} \
-          "cd /home/mat/Intelligent_Curtain_Wall && ./automated-deployment.sh"
+          ssh -i ~/.ssh/matpool_id_rsa -p ${{ env.MATPOOL_SSH_PORT }} ${{ env.MATPOOL_SSH_USERNAME }}@${{ env.MATPOOL_SSH_HOST }} "cd /home/mat/Intelligent_Curtain_Wall && ./automated-deployment.sh"
