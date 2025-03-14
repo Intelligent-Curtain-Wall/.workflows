@@ -68,4 +68,4 @@ jobs:
         run: |
           mv .secrets/MATPOOL_SSH_PRIVATE_KEY ~/.ssh/matpool_id_rsa
           chmod 600 ~/.ssh/matpool_id_rsa
-          ssh -i ~/.ssh/matpool_id_rsa -p ${{ env.MATPOOL_SSH_PORT }} -o StrictHostKeyChecking=no ${{ env.MATPOOL_SSH_USERNAME }}@${{ env.MATPOOL_SSH_HOST }} "cd /home/mat/Intelligent_Curtain_Wall && nohup ./automated-deployment.sh > /dev/null 2>&1 & exit"
+          ssh -i ~/.ssh/matpool_id_rsa -p ${{ env.MATPOOL_SSH_PORT }} -o StrictHostKeyChecking=no ${{ env.MATPOOL_SSH_USERNAME }}@${{ env.MATPOOL_SSH_HOST }} "cd /home/mat/Intelligent_Curtain_Wall && setsid ./automated-deployment.sh > /dev/null 2>&1 &"
