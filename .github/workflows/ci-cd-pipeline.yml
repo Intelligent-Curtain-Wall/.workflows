@@ -47,7 +47,7 @@ jobs:
           context: ./
           file: ./Dockerfile
           push: true
-          tags: docker.io/minmuslin/intelligent-curtain-wall:${{ inputs.image-tag }}
+          tags: docker.io/clearpool/intelligent-curtain-wall:${{ inputs.image-tag }}
 
       - name: Connect to remote server and execute deployment script
         run: |
