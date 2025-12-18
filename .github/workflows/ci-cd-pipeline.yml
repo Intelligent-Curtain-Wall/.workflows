@@ -53,7 +53,41 @@ jobs:
         run: |
           mv .secrets/MATPOOL_SSH_PRIVATE_KEY ~/.ssh/matpool_id_rsa
           chmod 600 ~/.ssh/matpool_id_rsa
-          if ! ssh -i ~/.ssh/matpool_id_rsa -p $(cat .secrets/MATPOOL_SSH_PORT) -o StrictHostKeyChecking=no $(cat .secrets/MATPOOL_SSH_USERNAME)@$(cat .secrets/MATPOOL_SSH_HOST) "cd /home/ecs-user/Intelligent_Curtain_Wall && chmod +x automated-deployment.sh && ./automated-deployment.sh"; then
-            echo "SSH connection timed out and was automatically disconnected, but the deployment script is still running in the background. You can check the deployment logs here: http://110.42.214.164:9000/deployment-logs"
+      
+          if ! ssh -i ~/.ssh/matpool_id_rsa \
+            -p $(cat .secrets/MATPOOL_SSH_PORT) \
+            -o StrictHostKeyChecking=no \
+            $(cat .secrets/MATPOOL_SSH_USERNAME)@$(cat .secrets/MATPOOL_SSH_HOST) \
+            "bash -lc '
+              set -e
+      
+              cleanup() {
+                echo \"[CLEANUP] Stop Clash and disable proxy\"
+                source /etc/profile.d/clash.sh || true
+                proxy_off || true
+                sudo pkill -f clash-linux-amd64 || true
+              }
+      
+              trap cleanup EXIT
+      
+              echo \"[1/4] Start Clash proxy\"
+              cd /home/ecs-user/clash-for-linux
+              sudo bash start.sh
+      
+              echo \"[2/4] Enable proxy\"
+              source /etc/profile.d/clash.sh
+              proxy_on
+      
+              echo \"[3/4] Run deployment script\"
+              cd /home/ecs-user/Intelligent_Curtain_Wall
+              chmod +x automated-deployment.sh
+              ./automated-deployment.sh
+      
+              echo \"[4/4] Deployment finished\"
+            '"; then
+      
+            echo "SSH connection timed out and was automatically disconnected, but the deployment script is still running in the background."
+            echo "You can check the deployment logs here: http://110.42.214.164:9000/deployment-logs"
             echo "SSH 连接时间过长，现已自动断开，但部署脚本仍在后台运行，您可以在此处查看部署日志：http://110.42.214.164:9000/deployment-logs"
           fi
+
