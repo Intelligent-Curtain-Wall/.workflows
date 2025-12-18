@@ -80,5 +80,5 @@ jobs:
       
             echo "SSH connection timed out and was automatically disconnected, but the deployment script is still running in the background."
             echo "You can check the deployment logs here: http://110.42.214.164:9000/deployment-logs"
-            echo "SSH 连接时间过长，现已自动断开，但部署脚本仍在后台运行，您可以在此处查看部署日志：http://110.42.214.164:9000/deployment-logs"
+            echo "SSH 连接时间过长，现已自动断开，但部署脚本仍在后台运行."
           fi
