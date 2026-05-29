@@ -48,6 +48,9 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: docker.io/clearpool/intelligent-curtain-wall:${{ inputs.image-tag }}
+      
+
+
 
       - name: Connect to remote server and execute deployment script
         run: |
@@ -70,21 +73,17 @@ jobs:
           CLASH_DIR="/home/ecs-user/clash-for-linux"
           PROJECT_DIR="/home/ecs-user/Intelligent_Curtain_Wall"
 
-          # 这里填写你已经验证可用的代理组和节点名
           CLASH_GROUP="🔰国外流量"
-          CLASH_NODE="美国A | 1.0x-流媒体"
+          CLASH_NODE="美国G | 0.1x-下载专用"
 
-          echo "[1/6] Restart Clash proxy"
+          echo "[1/7] Restart Clash proxy"
           cd "$CLASH_DIR"
-
-          # 先关闭旧 Clash，避免旧进程占用 9090，导致新配置里的 Secret 和实际 API Secret 不一致
           sudo bash shutdown.sh || true
           sleep 2
 
-          # 保存本次启动输出，后面直接从输出中读取 Secret
           sudo bash start.sh | tee /tmp/clash-start.log
 
-          echo "[2/6] Wait for Clash ports"
+          echo "[2/7] Wait for Clash ports"
           for i in $(seq 1 30); do
             if ss -lntp | grep -q ':7890' && ss -lntp | grep -q ':9090'; then
               echo "Clash proxy and API are ready"
@@ -100,11 +99,7 @@ jobs:
             sleep 1
           done
 
-          echo "[3/6] Enable shell proxy"
-          source /etc/profile.d/clash.sh
-          proxy_on
-
-          echo "[4/6] Read Clash API secret"
+          echo "[3/7] Read Clash API secret"
           CLASH_SECRET="$(awk '/Secret:/ {print $2}' /tmp/clash-start.log | tail -n1)"
 
           if [ -z "$CLASH_SECRET" ]; then
@@ -112,34 +107,81 @@ jobs:
             exit 1
           fi
 
-          echo "[5/6] Switch Clash node"
-          python3 - <<PY
+          echo "[4/7] Switch Clash to Global mode and select node"
+          CLASH_GROUP="$CLASH_GROUP" CLASH_NODE="$CLASH_NODE" CLASH_SECRET="$CLASH_SECRET" python3 - <<'PY'
           import json
+          import os
           import urllib.parse
           import urllib.request
 
-          group = "${CLASH_GROUP}"
-          node = "${CLASH_NODE}"
-          secret = "${CLASH_SECRET}"
-
-          url = "http://127.0.0.1:9090/proxies/" + urllib.parse.quote(group, safe="")
-          data = json.dumps({"name": node}).encode()
+          group = os.environ["CLASH_GROUP"]
+          node = os.environ["CLASH_NODE"]
+          secret = os.environ["CLASH_SECRET"]
 
           headers = {
               "Content-Type": "application/json",
               "Authorization": "Bearer " + secret,
           }
 
-          req = urllib.request.Request(url, data=data, method="PUT", headers=headers)
+          opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
-          with urllib.request.urlopen(req, timeout=15) as resp:
-              print("Switched:", group, "->", node, "status:", resp.status)
+          def request(method, path, body=None):
+              url = "http://127.0.0.1:9090" + path
+              data = None if body is None else json.dumps(body).encode()
+              req = urllib.request.Request(url, data=data, method=method, headers=headers)
+              with opener.open(req, timeout=15) as resp:
+                  raw = resp.read()
+                  return json.loads(raw.decode()) if raw else None
+
+          def switch(selector, target):
+              path = "/proxies/" + urllib.parse.quote(selector, safe="")
+              request("PUT", path, {"name": target})
+              print(f"Switched: {selector} -> {target}")
+
+          proxies = request("GET", "/proxies")
+          proxies = proxies.get("proxies", proxies)
+
+          if group not in proxies:
+              raise SystemExit(f"Group not found: {group}")
+
+          if node not in proxies[group].get("all", []):
+              raise SystemExit(f"Node not found in {group}: {node}")
+
+          switch(group, node)
+
+          request("PATCH", "/configs", {"mode": "Global", "ipv6": False})
+          print("Mode switched to Global, IPv6 disabled")
+
+          if "GLOBAL" in proxies:
+              global_all = proxies["GLOBAL"].get("all", [])
+              if node in global_all:
+                  switch("GLOBAL", node)
+              elif group in global_all:
+                  switch("GLOBAL", group)
+              else:
+                  raise SystemExit("GLOBAL cannot select the target node or group")
+          else:
+              print("GLOBAL selector not found, only mode was switched")
           PY
 
-          echo "[6/6] Test proxy connectivity"
-          curl -fsSI --connect-timeout 15 -x http://127.0.0.1:7890 https://www.google.com >/dev/null
+          echo "[5/7] Enable shell proxy"
+          source /etc/profile.d/clash.sh
+          proxy_on
 
-          echo "[Deployment] Start deployment script in background"
+          echo "[6/7] Test Docker registry through proxy"
+          HTTP_CODE="$(curl -4 -sS -o /dev/null -w '%{http_code}' \
+            --connect-timeout 20 \
+            -x http://127.0.0.1:7890 \
+            https://registry-1.docker.io/v2/)"
+
+          if [ "$HTTP_CODE" != "401" ]; then
+            echo "Docker registry proxy test failed, HTTP code: $HTTP_CODE"
+            exit 1
+          fi
+
+          echo "Docker registry is reachable through Clash proxy"
+
+          echo "[7/7] Start deployment script in background"
           cd "$PROJECT_DIR"
           chmod +x automated-deployment.sh
 
